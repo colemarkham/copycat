@@ -1,5 +1,5 @@
 {
-  "name": "Slackcat",
-  "description": "A Slack webhook which will respond to HTTP status does with an appropriate image from http.cat",
+  "name": "Copycat",
+  "description": "A Slack webhook which will respond to messages with an exact copy of the message but with an added cat",
   "image": "heroku/java"
 }

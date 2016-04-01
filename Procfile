@@ -1,1 +1,1 @@
-web:    java -cp target/classes:target/dependency/* net.ccmcomputing.slackcat.Slackcat
+web:    java -cp target/classes:target/dependency/* net.ccmcomputing.copycat.Copycat
