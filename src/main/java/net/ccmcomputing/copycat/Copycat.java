@@ -7,6 +7,9 @@ import static spark.Spark.post;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -48,6 +51,14 @@ public class Copycat{
       return catUrl;
    }
 
+   private static boolean isWhitelistedUser(String user){
+      List<String> patterns = getWhitelistPatterns();
+      for(String pattern: patterns){
+         if(Pattern.matches(pattern, user)) return true;
+      }
+      return false;
+   }
+
    static String getCatApiKey(){
       ProcessBuilder processBuilder = new ProcessBuilder();
       return processBuilder.environment().get("CATAPI_KEY");
@@ -60,8 +71,15 @@ public class Copycat{
                    // localhost)
    }
 
+   static List<String> getWhitelistPatterns(){
+      ProcessBuilder processBuilder = new ProcessBuilder();
+      String string = processBuilder.environment().get("WHITELIST_PATTERNS");
+      List<String> patterns = Arrays.asList(string.split(","));
+      return patterns;
+   }
+
    public static SlackMessage handleMessage(String user, String incomingText){
-      if(user.toLowerCase().contains("bot")) return new SlackMessage(null);
+      if(isWhitelistedUser(user)) return new SlackMessage(null);
       LocalDate today = LocalDate.now();
       if(today.getMonth() == Month.APRIL && today.getDayOfMonth() == 1) {
          String catUrl = getNextCatUrl();
