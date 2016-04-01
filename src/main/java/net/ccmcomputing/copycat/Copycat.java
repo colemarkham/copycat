@@ -12,7 +12,7 @@ import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import com.google.gson.Gson;
 
@@ -32,6 +32,22 @@ public class Copycat{
       return url;
    }
 
+   private static String getNextCatUrl(){
+      String catUrl = null;
+      try (CloseableHttpClient httpclient = HttpClientBuilder.create().disableRedirectHandling().build();){
+         HttpHead request = new HttpHead(getCatApiUrl());
+         try (CloseableHttpResponse response = httpclient.execute(request)){
+            Header locationHeader = response.getFirstHeader("Location");
+            if(locationHeader != null) {
+               catUrl = locationHeader.getValue();
+            }
+         }
+      }catch(IOException e){
+         e.printStackTrace();
+      }
+      return catUrl;
+   }
+
    static String getCatApiKey(){
       ProcessBuilder processBuilder = new ProcessBuilder();
       return processBuilder.environment().get("CATAPI_KEY");
@@ -48,18 +64,8 @@ public class Copycat{
       if(user.toLowerCase().contains("bot")) return new SlackMessage(null);
       LocalDate today = LocalDate.now();
       if(today.getMonth() == Month.APRIL && today.getDayOfMonth() == 1) {
-         try (CloseableHttpClient httpclient = HttpClients.createDefault();){
-            HttpHead request = new HttpHead(getCatApiUrl());
-            try (CloseableHttpResponse response = httpclient.execute(request)){
-               Header locationHeader = response.getFirstHeader("Location");
-               if(locationHeader != null) {
-                  String catUrl = locationHeader.getValue();
-                  return new SlackMessage(incomingText + "\n" + catUrl);
-               }
-            }
-         }catch(IOException e){
-            e.printStackTrace();
-         }
+         String catUrl = getNextCatUrl();
+         if(catUrl != null) return new SlackMessage(incomingText + "\n" + catUrl);
          // Ok, no cat, just the message
          return new SlackMessage(incomingText);
       }
@@ -69,7 +75,7 @@ public class Copycat{
    public static void main(String[] args){
       Gson gson = new Gson();
       port(getHerokuAssignedPort());
-      get("/", (req, res) -> "This is a webhook. See https://github.com/colemarkham/copycat for details.");
+      get("/", (req, res) -> "<html><body>This is a webhook. See https://github.com/colemarkham/copycat for details. <br /><img src='" + getNextCatUrl() + "' /></body></html>");
       post("/", (req, res) -> handleMessage(req.queryParams("user_name"), req.queryParams("text")), gson::toJson);
    }
 
